@@ -138,17 +138,24 @@ void TeelSys_MCP23S17::begin(uint8_t address, uint8_t ss) {
 
   // set defaults!
   // all inputs on port A and B
-  writeRegister(MCP23S17_IODIRA, 0xff);
-  writeRegister(MCP23S17_IODIRB, 0xff);
+  writeRegister(MCP23017_IODIRA, 0xff);
+  writeRegister(MCP23017_IODIRB, 0xff);
 
   // Turn off interrupt triggers
-  writeRegister(MCP23S17_GPINTENA, 0x00);
-  writeRegister(MCP23S17_GPINTENB, 0x00);
+  writeRegister(MCP23017_GPINTENA, 0x00);
+  writeRegister(MCP23017_GPINTENB, 0x00);
 
   // Turn off pull up resistors
-  writeRegister(MCP23S17_GPPUA, 0x00);
-  writeRegister(MCP23S17_GPPUB, 0x00);
+  writeRegister(MCP23017_GPPUA, 0x00);
+  writeRegister(MCP23017_GPPUB, 0x00);
 }
+
+/**
+ * Initializes the default MCP23017, with 000 for the configurable part of the
+ * address
+ * @param theWire the I2C object to use, defaults to &Wire
+ */
+void TeelSys_MCP23S17::begin(uint8_t ss) { begin(0, ss); }
 
 /**
  * Sets the pin mode to either INPUT or OUTPUT
@@ -156,10 +163,10 @@ void TeelSys_MCP23S17::begin(uint8_t address, uint8_t ss) {
  * @param d Mode to set the pin
  */
 void TeelSys_MCP23S17::pinMode(uint8_t p, uint8_t d) {
-  updateRegisterBit(p, (d == INPUT || d == INPUT_PULLUP), MCP23S17_IODIRA,
-                    MCP23S17_IODIRB);
+  updateRegisterBit(p, (d == INPUT || d == INPUT_PULLUP), MCP23017_IODIRA,
+                    MCP23017_IODIRB);
   if (d == INPUT || d == INPUT_PULLUP) {
-    updateRegisterBit(p, (d == INPUT_PULLUP), MCP23S17_GPPUA, MCP23S17_GPPUB);
+    updateRegisterBit(p, (d == INPUT_PULLUP), MCP23017_GPPUA, MCP23017_GPPUB);
   }
 }
 
@@ -169,12 +176,12 @@ void TeelSys_MCP23S17::pinMode(uint8_t p, uint8_t d) {
  * @param d Mode to set the port
  */
 void TeelSys_MCP23S17::portMode(uint8_t b, uint8_t d) {
-  uint8_t addrIODIR = MCP23S17_IODIRA;
-  uint8_t addrGPPU = MCP23S17_GPPUA;
+  uint8_t addrIODIR = MCP23017_IODIRA;
+  uint8_t addrGPPU = MCP23017_GPPUA;
 
-  if (b == MCP23S17_PORT_B) {
-    addrIODIR = MCP23S17_IODIRB;
-    addrGPPU = MCP23S17_GPPUB;
+  if (b == MCP23017_PORT_B) {
+    addrIODIR = MCP23017_IODIRB;
+    addrGPPU = MCP23017_GPPUB;
   }
 
   switch (d) {
@@ -198,10 +205,10 @@ void TeelSys_MCP23S17::portMode(uint8_t b, uint8_t d) {
  * @param d Polarity 0 = non-inverted, 1 = inverted
  */
 void TeelSys_MCP23S17::portPolarity(uint8_t b, uint8_t d) {
-  uint8_t addrIPOL = MCP23S17_IPOLA;
+  uint8_t addrIPOL = MCP23017_IPOLA;
 
-  if (b == MCP23S17_PORT_B) {
-    addrIPOL = MCP23S17_IPOLB;
+  if (b == MCP23017_PORT_B) {
+    addrIPOL = MCP23017_IPOLB;
   }
 
   if (d == 0) { // non-inverted
@@ -222,7 +229,7 @@ uint16_t TeelSys_MCP23S17::readGPIOAB() {
   // read the current GPIO output latches
   ::digitalWrite(_ss, LOW);									// Take slave-select low
   SPI.transfer(OPCODER | (_address << 1));	// Send the MCP23S17 opcode, chip address, and read bit
-  SPI.transfer(MCP23S17_GPIOA);							// Send the register we want to read
+  SPI.transfer(MCP23017_GPIOA);							// Send the register we want to read
   a = SPI.transfer(0x00);										// Send any byte, the function will return the read value (register address pointer will auto-increment after write)
   ba |= (SPI.transfer(0x00) << 8);					// Read in the "high byte" (portB)
   ::digitalWrite(_ss, HIGH);								// Take slave-select high
@@ -245,9 +252,9 @@ uint8_t TeelSys_MCP23S17::readGPIO(uint8_t b) {
   SPI.transfer(OPCODER | (_address << 1));  // Send the MCP23S17 opcode, chip address, and read bit
   // Send the register we want to read
   if (b == 0)
-    SPI.transfer(MCP23S17_GPIOA);
+    SPI.transfer(MCP23017_GPIOA);
   else {
-    SPI.transfer(MCP23S17_GPIOB);
+    SPI.transfer(MCP23017_GPIOB);
   }
   value = SPI.transfer(0x00);               // Send any byte, the function will return the read value
   ::digitalWrite(_ss, HIGH);								// Take slave-select high
@@ -261,7 +268,7 @@ uint8_t TeelSys_MCP23S17::readGPIO(uint8_t b) {
 void TeelSys_MCP23S17::writeGPIOAB(uint16_t ba) {
 	::digitalWrite(_ss, LOW);									// Take slave-select low
   SPI.transfer(OPCODEW | (_address << 1));  // Send the MCP23S17 opcode, chip address, and write bit
-  SPI.transfer(MCP23S17_GPIOA);             // Send the register we want to write 
+  SPI.transfer(MCP23017_GPIOA);             // Send the register we want to write 
   SPI.transfer((uint8_t) (ba & 0xFF));      // Send the low byte (register address pointer will auto-increment after write)
   SPI.transfer((uint8_t) (ba >> 8));        // Shift the high byte down to the low byte location and send
   ::digitalWrite(_ss, HIGH);								// Take slave-select high
@@ -277,11 +284,11 @@ void TeelSys_MCP23S17::writeGPIO(uint8_t b, uint8_t d) {
   SPI.transfer(OPCODEW | (_address << 1));  // Send the MCP23S17 opcode, chip address, and write bit
   // Send the register we want to write
   if (b == 0)
-    SPI.transfer(MCP23S17_GPIOA);
+    SPI.transfer(MCP23017_GPIOA);
   else {
-    SPI.transfer(MCP23S17_GPIOB);
+    SPI.transfer(MCP23017_GPIOB);
   }
-  SPI.transfer(value);											// Send the byte
+  SPI.transfer(d);											// Send the byte
   ::digitalWrite(_ss, HIGH);								// Take slave-select high
 }
 
@@ -295,14 +302,14 @@ void TeelSys_MCP23S17::digitalWrite(uint8_t pin, uint8_t d) {
   uint8_t bit = bitForPin(pin);
 
   // read the current GPIO output latches
-  uint8_t regAddr = regForPin(pin, MCP23S17_OLATA, MCP23S17_OLATB);
+  uint8_t regAddr = regForPin(pin, MCP23017_OLATA, MCP23017_OLATB);
   gpio = readRegister(regAddr);
 
   // set the pin and direction
   bitWrite(gpio, bit, d);
 
   // write the new GPIO
-  regAddr = regForPin(pin, MCP23S17_GPIOA, MCP23S17_GPIOB);
+  regAddr = regForPin(pin, MCP23017_GPIOA, MCP23017_GPIOB);
   writeRegister(regAddr, gpio);
 }
 
@@ -312,7 +319,7 @@ void TeelSys_MCP23S17::digitalWrite(uint8_t pin, uint8_t d) {
  * @param d Value to set the pin
  */
 void TeelSys_MCP23S17::pullUp(uint8_t p, uint8_t d) {
-  updateRegisterBit(p, d, MCP23S17_GPPUA, MCP23S17_GPPUB);
+  updateRegisterBit(p, d, MCP23017_GPPUA, MCP23017_GPPUB);
 }
 
 /*!
@@ -322,7 +329,7 @@ void TeelSys_MCP23S17::pullUp(uint8_t p, uint8_t d) {
  */
 uint8_t TeelSys_MCP23S17::digitalRead(uint8_t pin) {
   uint8_t bit = bitForPin(pin);
-  uint8_t regAddr = regForPin(pin, MCP23S17_GPIOA, MCP23S17_GPIOB);
+  uint8_t regAddr = regForPin(pin, MCP23017_GPIOA, MCP23017_GPIOB);
   return (readRegister(regAddr) >> bit) & 0x1;
 }
 
@@ -339,18 +346,18 @@ uint8_t TeelSys_MCP23S17::digitalRead(uint8_t pin) {
 void TeelSys_MCP23S17::setupInterrupts(uint8_t mirroring, uint8_t openDrain,
                                         uint8_t polarity) {
   // configure the port A
-  uint8_t ioconfValue = readRegister(MCP23S17_IOCONA);
+  uint8_t ioconfValue = readRegister(MCP23017_IOCONA);
   bitWrite(ioconfValue, 6, mirroring);
   bitWrite(ioconfValue, 2, openDrain);
   bitWrite(ioconfValue, 1, polarity);
-  writeRegister(MCP23S17_IOCONA, ioconfValue);
+  writeRegister(MCP23017_IOCONA, ioconfValue);
 
   // Configure the port B
-  ioconfValue = readRegister(MCP23S17_IOCONB);
+  ioconfValue = readRegister(MCP23017_IOCONB);
   bitWrite(ioconfValue, 6, mirroring);
   bitWrite(ioconfValue, 2, openDrain);
   bitWrite(ioconfValue, 1, polarity);
-  writeRegister(MCP23S17_IOCONB, ioconfValue);
+  writeRegister(MCP23017_IOCONB, ioconfValue);
 }
 
 /**
@@ -367,17 +374,17 @@ void TeelSys_MCP23S17::setupInterruptPin(uint8_t pin, uint8_t mode) {
 
   // set the pin interrupt control (0 means change, 1 means compare against
   // given value);
-  updateRegisterBit(pin, (mode != CHANGE), MCP23S17_INTCONA, MCP23S17_INTCONB);
+  updateRegisterBit(pin, (mode != CHANGE), MCP23017_INTCONA, MCP23017_INTCONB);
   // if the mode is not CHANGE, we need to set up a default value, different
   // value triggers interrupt
 
   // In a RISING interrupt the default value is 0, interrupt is triggered when
   // the pin goes to 1. In a FALLING interrupt the default value is 1, interrupt
   // is triggered when pin goes to 0.
-  updateRegisterBit(pin, (mode == FALLING), MCP23S17_DEFVALA, MCP23S17_DEFVALB);
+  updateRegisterBit(pin, (mode == FALLING), MCP23017_DEFVALA, MCP23017_DEFVALB);
 
   // enable the pin for interrupt
-  updateRegisterBit(pin, HIGH, MCP23S17_GPINTENA, MCP23S17_GPINTENB);
+  updateRegisterBit(pin, HIGH, MCP23017_GPINTENA, MCP23017_GPINTENB);
 }
 
 /**
@@ -388,7 +395,7 @@ void TeelSys_MCP23S17::setupInterruptPin(uint8_t pin, uint8_t mode) {
  */
 void TeelSys_MCP23S17::disableInterruptPin(uint8_t pin) {
   // disable the pin for interrupt
-  updateRegisterBit(pin, LOW, MCP23S17_GPINTENA, MCP23S17_GPINTENB);
+  updateRegisterBit(pin, LOW, MCP23017_GPINTENA, MCP23017_GPINTENB);
 }
 
 /*!
@@ -399,18 +406,18 @@ uint8_t TeelSys_MCP23S17::getLastInterruptPin() {
   uint8_t intf;
 
   // try port A
-  intf = readRegister(MCP23S17_INTFA);
+  intf = readRegister(MCP23017_INTFA);
   for (int i = 0; i < 8; i++)
     if (bitRead(intf, i))
       return i;
 
   // try port B
-  intf = readRegister(MCP23S17_INTFB);
+  intf = readRegister(MCP23017_INTFB);
   for (int i = 0; i < 8; i++)
     if (bitRead(intf, i))
       return i + 8;
 
-  return MCP23S17_INT_ERR;
+  return MCP23017_INT_ERR;
 }
 /*!
  * @brief Gets the value of the last interrupt pin
@@ -418,11 +425,11 @@ uint8_t TeelSys_MCP23S17::getLastInterruptPin() {
  */
 uint8_t TeelSys_MCP23S17::getLastInterruptPinValue() {
   uint8_t intPin = getLastInterruptPin();
-  if (intPin != MCP23S17_INT_ERR) {
-    uint8_t intcapreg = regForPin(intPin, MCP23S17_INTCAPA, MCP23S17_INTCAPB);
+  if (intPin != MCP23017_INT_ERR) {
+    uint8_t intcapreg = regForPin(intPin, MCP23017_INTCAPA, MCP23017_INTCAPB);
     uint8_t bit = bitForPin(intPin);
     return (readRegister(intcapreg) >> bit) & (0x01);
   }
 
-  return MCP23S17_INT_ERR;
+  return MCP23017_INT_ERR;
 }
