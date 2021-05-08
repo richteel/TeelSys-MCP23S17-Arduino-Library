@@ -1,0 +1,25 @@
+#######################################
+# Syntax Coloring Map for MCP23017
+#######################################
+
+#######################################
+# Datatypes (KEYWORD1)
+#######################################
+
+MCP23017	KEYWORD1
+
+#######################################
+# Methods and Functions (KEYWORD2)
+#######################################
+
+pullUp	KEYWORD2
+portMode	KEYWORD2
+portPolarity	KEYWORD2
+writeGPIO	KEYWORD2
+writeGPIOAB	KEYWORD2
+readGPIO	KEYWORD2
+readGPIOAB	KEYWORD2
+
+#######################################
+# Constants (LITERAL1)
+#######################################
