@@ -39,3 +39,5 @@ Physical Pin #| Pin Name | Pin ID
 6 | GPB5 | 13
 7 | GPB6 | 14
 8 | GPB7 | 15
+
+BTW: I did not include any example code as I was interested in getting my project working. The code that I'm currently working on using the library may be found at <a href="https://github.com/richteel/Psion-Organiser-II---Graphic-LCD/tree/dev/Code/Keypad_LCD">https://github.com/richteel/Psion-Organiser-II---Graphic-LCD/tree/dev/Code/Keypad_LCD</a>. The code is using the Adafruit library for the MCP23017 and my modified library for the MCP23S17.
